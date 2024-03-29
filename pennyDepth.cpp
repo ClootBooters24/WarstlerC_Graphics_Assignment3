@@ -26,7 +26,7 @@ int zpos = 0;
 int mode = ROTATE;
 
 // Surface variables
-#define SIZE 200
+#define SIZE 500
 float Px[SIZE][SIZE];
 float Py[SIZE][SIZE];
 float Pz[SIZE][SIZE];
@@ -36,6 +36,52 @@ float Nz[SIZE][SIZE];
 #define STEP 0.1
 
 #include "shading.cpp"
+#include <fstream>
+#include <iostream>
+using namespace std;
+
+//---------------------------------------
+// Initialize Depth Information
+//---------------------------------------
+void readDepth()
+{
+   ifstream file("penny-depth.txt");
+
+   // Initialize depth information
+   for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+         file >> Pz[i][j];
+         // cout << Pz[i][j] << "\n";
+      }
+   }
+
+   file.close();
+}
+
+//---------------------------------------
+// Initialize Color Information
+//---------------------------------------
+void readColor()
+{
+   ifstream file("penny-image.txt");
+
+   static float R[SIZE][SIZE];
+   static float G[SIZE][SIZE];
+   static float B[SIZE][SIZE];
+
+   // Initialize color information
+   for (int i = 0; i < SIZE; i++) {
+      for (int j = 0; j < SIZE; j++) {
+         file >> R[i][j];
+         file >> G[i][j];
+         file >> B[i][j];
+         // cout << R[i][j] << "\n" << G[i][j] << "\n" << B[i][j] << "\n";
+         // init_material(Ka, Kd, Ks, Kp, R[i][j], G[i][j], B[i][j]);
+      }
+   }
+
+   file.close();
+}
 
 //---------------------------------------
 // Initialize surface points
@@ -48,23 +94,23 @@ void init_surface(float Xmin, float Xmax, float Ymin, float Ymax)
    {
       Px[i][j] = Xmin + i * (Xmax - Xmin) / SIZE;
       Py[i][j] = Ymin + j * (Ymax - Ymin) / SIZE;
-      Pz[i][j] = 0;
+      // Pz[i][j] = 0;
    }
         
-   // Add randoms waves to surface
-   for (int wave = 1; wave <= 10; wave++)
-   {
-      int rand_i = rand() % SIZE / wave;
-      int rand_j = rand() % SIZE / wave;
-      float length = sqrt(rand_i * rand_i + rand_j * rand_j);
-      if (length >= 10)
-      for (int i = 0; i < SIZE; i++)
-      for (int j = 0; j < SIZE; j++)
-      {
-         float angle = (rand_i * i + rand_j * j) / (length * length);
-         Pz[i][j] += 0.01 * sin(angle * 2 * M_PI);
-      }
-   }
+   // // Add randoms waves to surface
+   // for (int wave = 1; wave <= 10; wave++)
+   // {
+   //    int rand_i = rand() % SIZE / wave;
+   //    int rand_j = rand() % SIZE / wave;
+   //    float length = sqrt(rand_i * rand_i + rand_j * rand_j);
+   //    if (length >= 10)
+   //    for (int i = 0; i < SIZE; i++)
+   //    for (int j = 0; j < SIZE; j++)
+   //    {
+   //       float angle = (rand_i * i + rand_j * j) / (length * length);
+   //       Pz[i][j] += 0.01 * sin(angle * 2 * M_PI);
+   //    }
+   // }
 }
 
 //---------------------------------------
@@ -126,6 +172,9 @@ void init()
    glOrtho(-radius, radius, -radius, radius, -radius, radius);
    glEnable(GL_DEPTH_TEST);
 
+   readColor();
+   readDepth();
+
    // Initialize smooth shading
    glShadeModel(GL_SMOOTH);
    init_light(GL_LIGHT0, 1, 1, 1, 1, 1, 1);
@@ -156,16 +205,15 @@ void display()
    for (int i = 0; i < SIZE-1; i++)
       for (int j = 0; j < SIZE-1; j++)
       {
-	 // glBegin(GL_LINE_LOOP);
-	 glBegin(GL_POLYGON);
+	 glBegin(GL_LINE_LOOP);
 	 glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
-	 glVertex3f(Px[i][j], Py[i][j], Pz[i][j]);
+	 glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.0005);
 	 glNormal3f(Nx[i + 1][j], Ny[i + 1][j], Nz[i + 1][j]);
-	 glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j]);
+	 glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] * 0.0005);
 	 glNormal3f(Nx[i + 1][j + 1], Ny[i + 1][j + 1], Nz[i + 1][j + 1]);
-	 glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1]);
+	 glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] * 0.0005);
 	 glNormal3f(Nx[i][j + 1], Ny[i][j + 1], Nz[i][j + 1]);
-	 glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1]);
+	 glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] * 0.0005);
 	 glEnd();
       }
    glFlush();
@@ -176,13 +224,6 @@ void display()
 //---------------------------------------
 void keyboard(unsigned char key, int x, int y)
 {
-   // Initialize random surface
-   if (key == 'i')
-   {
-      init_surface(-1.0, 1.0, -1.0, 1.0);
-      init_normals();
-   }
-
    // Determine if we are in ROTATE or TRANSLATE mode
    if ((key == 'r') || (key == 'R'))
    {
