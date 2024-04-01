@@ -40,6 +40,12 @@ float Nz[SIZE][SIZE];
 #include <iostream>
 using namespace std;
 
+static float R[SIZE][SIZE];
+static float G[SIZE][SIZE];
+static float B[SIZE][SIZE];
+
+int displayMode = 0;
+
 //---------------------------------------
 // Initialize Depth Information
 //---------------------------------------
@@ -64,10 +70,6 @@ void readDepth()
 void readColor()
 {
    ifstream file("penny-image.txt");
-
-   static float R[SIZE][SIZE];
-   static float G[SIZE][SIZE];
-   static float B[SIZE][SIZE];
 
    // Initialize color information
    for (int i = 0; i < SIZE; i++) {
@@ -176,8 +178,8 @@ void init()
    readDepth();
 
    // Initialize smooth shading
-   glShadeModel(GL_SMOOTH);
-   init_light(GL_LIGHT0, 1, 1, 1, 1, 1, 1);
+   // glShadeModel(GL_SMOOTH);
+   // init_light(GL_LIGHT0, 1, 1, 1, 1, 1, 1);
 
    // Initialize surface
    init_surface(-1.0, 1.0, -1.0, 1.0);
@@ -199,23 +201,46 @@ void display()
    glRotatef(zangle, 0.0, 0.0, 1.0);
 
    // Initialize material properties
-   init_material(Ka, Kd, Ks, 100 * Kp, 0.5, 0.5, 0.8);
+   // init_material(Ka, Kd, Ks, 100 * Kp, 0.5, 0.5, 0.8);
 
-   // Draw the surface
-   for (int i = 0; i < SIZE-1; i++)
-      for (int j = 0; j < SIZE-1; j++)
-      {
-	 glBegin(GL_LINE_LOOP);
-	 glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
-	 glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.0005);
-	 glNormal3f(Nx[i + 1][j], Ny[i + 1][j], Nz[i + 1][j]);
-	 glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] * 0.0005);
-	 glNormal3f(Nx[i + 1][j + 1], Ny[i + 1][j + 1], Nz[i + 1][j + 1]);
-	 glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] * 0.0005);
-	 glNormal3f(Nx[i][j + 1], Ny[i][j + 1], Nz[i][j + 1]);
-	 glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] * 0.0005);
-	 glEnd();
+   //Wire Mode
+   if(displayMode == 0) {
+      for(int i = 0; i < SIZE - 1; i++) {
+         for(int j = 0; j < SIZE - 1; j++) {
+            
+         }
       }
+   } 
+   //RGB Mode
+   else if(displayMode == 1) {
+      for(int i = 0; i < SIZE - 1; i++) {
+         for(int j = 0; j < SIZE - 1; j++) {
+            glColor3f(R[i][j] / 255, G[i][j] / 255, B[i][j] / 255);
+	         glBegin(GL_POLYGON);
+	         glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
+	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] / 255);
+	         glNormal3f(Nx[i + 1][j], Ny[i + 1][j], Nz[i + 1][j]);
+	         glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] / 255);
+	         glNormal3f(Nx[i + 1][j + 1], Ny[i + 1][j + 1], Nz[i + 1][j + 1]);
+	         glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] / 255);
+	         glNormal3f(Nx[i][j + 1], Ny[i][j + 1], Nz[i][j + 1]);
+	         glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] / 255);
+	         glEnd();
+         }
+      }
+   }
+   //Phong Shading Mode
+   else if(displayMode == 2) {
+      for(int i = 0; i < SIZE - 1; i++) {
+         for(int j = 0; j < SIZE - 1; j++) {
+            
+         }
+      }
+   }
+   else {
+      return;
+   }
+
    glFlush();
 }
 
@@ -235,6 +260,14 @@ void keyboard(unsigned char key, int x, int y)
       printf
 	 ("Type x y z to decrease or X Y Z to increase TRANSLATION distance.\n");
       mode = TRANSLATE;
+   }
+
+   if(key == '0') {
+      displayMode = 0;
+   } else if(key == '1') {
+      displayMode = 1;
+   } else if(key == '2') {
+      displayMode = 2;
    }
 
    // Handle ROTATE
@@ -344,6 +377,7 @@ int main(int argc, char *argv[])
    glutCreateWindow("Surface");
    init();
    printf("Type r to enter ROTATE mode or t to enter TRANSLATE mode.\n");
+   printf("Type 1, 2, 3 to change display mode.\n");
 
    // Specify callback function
    glutDisplayFunc(display);
