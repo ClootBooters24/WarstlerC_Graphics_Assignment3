@@ -46,22 +46,6 @@ static float B[SIZE][SIZE];
 
 int displayMode = 0;
 
-void calculateNormal(float x, float y, float z, GLfloat* normal) {
-    GLfloat vec1[3] = {x - 1, y, z};
-    GLfloat vec2[3] = {x, y - 1, z};
-
-    // Calculate the cross product of vec1 and vec2
-    normal[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1];
-    normal[1] = vec1[2] * vec2[0] - vec1[0] * vec2[2];
-    normal[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
-
-    // Normalize the normal vector
-    GLfloat length = sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
-    normal[0] /= length;
-    normal[1] /= length;
-    normal[2] /= length;
-}
-
 //---------------------------------------
 // Initialize Depth Information
 //---------------------------------------
@@ -182,7 +166,6 @@ void init()
 
    // Initialize smooth shading
    glShadeModel(GL_SMOOTH);
-   // init_light(GL_LIGHT0, 1, 1, 1, 1, 1, 1);
 
    // Initialize surface
    init_surface(-1.0, 1.0, -1.0, 1.0);
@@ -256,8 +239,6 @@ void display()
 
       for(int i = 0; i < SIZE - 1; i++) {
          for(int j = 0; j < SIZE - 1; j++) {
-            GLfloat normal[3];
-            calculateNormal(Px[i][j], Py[i][j], Pz[i][j], normal);
             glBegin(GL_POLYGON);
 	         glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
 	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.001);
