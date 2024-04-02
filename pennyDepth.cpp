@@ -46,6 +46,22 @@ static float B[SIZE][SIZE];
 
 int displayMode = 0;
 
+void calculateNormal(float x, float y, float z, GLfloat* normal) {
+    GLfloat vec1[3] = {x - 1, y, z};
+    GLfloat vec2[3] = {x, y - 1, z};
+
+    // Calculate the cross product of vec1 and vec2
+    normal[0] = vec1[1] * vec2[2] - vec1[2] * vec2[1];
+    normal[1] = vec1[2] * vec2[0] - vec1[0] * vec2[2];
+    normal[2] = vec1[0] * vec2[1] - vec1[1] * vec2[0];
+
+    // Normalize the normal vector
+    GLfloat length = sqrt(normal[0] * normal[0] + normal[1] * normal[1] + normal[2] * normal[2]);
+    normal[0] /= length;
+    normal[1] /= length;
+    normal[2] /= length;
+}
+
 //---------------------------------------
 // Initialize Depth Information
 //---------------------------------------
@@ -60,7 +76,6 @@ void readDepth()
          // cout << Pz[i][j] << "\n";
       }
    }
-
    file.close();
 }
 
@@ -75,10 +90,11 @@ void readColor()
    for (int i = 0; i < SIZE; i++) {
       for (int j = 0; j < SIZE; j++) {
          file >> R[i][j];
+         // cout << R[i][j] << "\n";
          file >> G[i][j];
+         // cout << G[i][j] << "\n";
          file >> B[i][j];
-         // cout << R[i][j] << "\n" << G[i][j] << "\n" << B[i][j] << "\n";
-         // init_material(Ka, Kd, Ks, Kp, R[i][j], G[i][j], B[i][j]);
+         // cout << Pz[i][j] << "\n";
       }
    }
 
@@ -96,23 +112,7 @@ void init_surface(float Xmin, float Xmax, float Ymin, float Ymax)
    {
       Px[i][j] = Xmin + i * (Xmax - Xmin) / SIZE;
       Py[i][j] = Ymin + j * (Ymax - Ymin) / SIZE;
-      // Pz[i][j] = 0;
    }
-        
-   // // Add randoms waves to surface
-   // for (int wave = 1; wave <= 10; wave++)
-   // {
-   //    int rand_i = rand() % SIZE / wave;
-   //    int rand_j = rand() % SIZE / wave;
-   //    float length = sqrt(rand_i * rand_i + rand_j * rand_j);
-   //    if (length >= 10)
-   //    for (int i = 0; i < SIZE; i++)
-   //    for (int j = 0; j < SIZE; j++)
-   //    {
-   //       float angle = (rand_i * i + rand_j * j) / (length * length);
-   //       Pz[i][j] += 0.01 * sin(angle * 2 * M_PI);
-   //    }
-   // }
 }
 
 //---------------------------------------
@@ -177,8 +177,11 @@ void init()
    readColor();
    readDepth();
 
+   // Initialize material properties
+   init_material(Ka, Kd, Ks, 100 * Kp, 149, 82, 37);
+
    // Initialize smooth shading
-   // glShadeModel(GL_SMOOTH);
+   glShadeModel(GL_SMOOTH);
    // init_light(GL_LIGHT0, 1, 1, 1, 1, 1, 1);
 
    // Initialize surface
@@ -200,14 +203,16 @@ void display()
    glRotatef(yangle, 0.0, 1.0, 0.0);
    glRotatef(zangle, 0.0, 0.0, 1.0);
 
-   // Initialize material properties
-   // init_material(Ka, Kd, Ks, 100 * Kp, 0.5, 0.5, 0.8);
-
    //Wire Mode
    if(displayMode == 0) {
       for(int i = 0; i < SIZE - 1; i++) {
          for(int j = 0; j < SIZE - 1; j++) {
-            
+            glBegin(GL_LINE_LOOP);
+	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.001);
+	         glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] * 0.001);
+	         glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] * 0.001);
+	         glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] * 0.001);
+	         glEnd();
          }
       }
    } 
@@ -217,25 +222,58 @@ void display()
          for(int j = 0; j < SIZE - 1; j++) {
             glColor3f(R[i][j] / 255, G[i][j] / 255, B[i][j] / 255);
 	         glBegin(GL_POLYGON);
-	         glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
-	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] / 255);
-	         glNormal3f(Nx[i + 1][j], Ny[i + 1][j], Nz[i + 1][j]);
-	         glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] / 255);
-	         glNormal3f(Nx[i + 1][j + 1], Ny[i + 1][j + 1], Nz[i + 1][j + 1]);
-	         glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] / 255);
-	         glNormal3f(Nx[i][j + 1], Ny[i][j + 1], Nz[i][j + 1]);
-	         glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] / 255);
+	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.001);
+	         glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] * 0.001);
+	         glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] * 0.001);
+	         glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] * 0.001);
 	         glEnd();
          }
       }
    }
    //Phong Shading Mode
    else if(displayMode == 2) {
+      glEnable(GL_LIGHTING);
+      glEnable(GL_LIGHT0);
+      glEnable(GL_NORMALIZE);
+
+      GLfloat ambientLight[] = {0.2f, 0.2f, 0.2f, 1.0f};
+      GLfloat diffuseLight[] = {0.8f, 0.8f, 0.8, 1.0f};
+      GLfloat specularLight[] = {1.0f, 1.0f, 1.0f, 1.0f};
+      GLfloat position[] = {1.5f, 1.0f, 4.0f, 1.0f};
+
+      glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+      glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+      glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+      glLightfv(GL_LIGHT0, GL_POSITION, position);
+
+      GLfloat mat_ambient[] = { 128.0f/255.0f, 85.0f/255.0f, 66.0f/255.0f, 1.0f };
+      GLfloat mat_diffuse[] = { 128.0f/255.0f, 85.0f/255.0f, 66.0f/255.0f, 1.0f };
+      GLfloat mat_specular[] = { 128.0f/255.0f, 85.0f/255.0f, 66.0f/255.0f, 1.0f };
+
+      glMaterialfv(GL_FRONT, GL_AMBIENT, mat_ambient);
+      glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_diffuse);
+      glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
+
       for(int i = 0; i < SIZE - 1; i++) {
          for(int j = 0; j < SIZE - 1; j++) {
-            
+            GLfloat normal[3];
+            calculateNormal(Px[i][j], Py[i][j], Pz[i][j], normal);
+            glBegin(GL_POLYGON);
+	         glNormal3f(Nx[i][j], Ny[i][j], Nz[i][j]);
+	         glVertex3f(Px[i][j], Py[i][j], Pz[i][j] * 0.001);
+	         glNormal3f(Nx[i + 1][j], Ny[i + 1][j], Nz[i + 1][j]);
+	         glVertex3f(Px[i + 1][j], Py[i + 1][j], Pz[i + 1][j] * 0.001);
+	         glNormal3f(Nx[i + 1][j + 1], Ny[i + 1][j + 1], Nz[i + 1][j + 1]);
+	         glVertex3f(Px[i + 1][j + 1], Py[i + 1][j + 1], Pz[i + 1][j + 1] * 0.001);
+	         glNormal3f(Nx[i][j + 1], Ny[i][j + 1], Nz[i][j + 1]);
+	         glVertex3f(Px[i][j + 1], Py[i][j + 1], Pz[i][j + 1] * 0.001);
+	         glEnd();
          }
       }
+
+      glDisable(GL_LIGHTING);
+      glDisable(GL_LIGHT0);
+      glDisable(GL_NORMALIZE);
    }
    else {
       return;
@@ -263,10 +301,13 @@ void keyboard(unsigned char key, int x, int y)
    }
 
    if(key == '0') {
+      printf("Wire Mode\n");
       displayMode = 0;
    } else if(key == '1') {
+      printf("RGB Mode\n");
       displayMode = 1;
    } else if(key == '2') {
+      printf("Phong Shading Mode\n");
       displayMode = 2;
    }
 
